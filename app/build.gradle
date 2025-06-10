@@ -13,9 +13,9 @@ plugins {
 
 repositories {
     mavenLocal()
-    maven { url 'https://maven.rblb.it/NostrGameEngine/nge-platforms' }
-    maven { url 'https://maven.rblb.it/NostrGameEngine/nostr4j' }
-    maven { url 'https://maven.rblb.it/NostrGameEngine/ngengine' }
+    maven { url 'https://maven.ngengine.org/NostrGameEngine/nge-platforms' }
+    maven { url 'https://maven.ngengine.org/NostrGameEngine/nostr4j' }
+    maven { url 'https://maven.ngengine.org/NostrGameEngine/ngengine' }
     mavenCentral()
 }
 
