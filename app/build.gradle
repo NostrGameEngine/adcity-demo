@@ -25,8 +25,10 @@ dependencies {
     implementation "org.ngengine:nge-core:${ngeVersion}"
     implementation "org.ngengine:nge-gui:${ngeVersion}"
     implementation "org.ngengine:nge-networking:${ngeVersion}"
+    implementation "org.ngengine:nge-ads:${ngeVersion}"
     
     implementation "org.ngengine:jme3-desktop:${ngeVersion}"
+    implementation "org.ngengine:jme3-jbullet:${ngeVersion}"
     implementation "org.ngengine:jme3-effects:${ngeVersion}"
     implementation "org.ngengine:jme3-jogg:${ngeVersion}"
     implementation "org.ngengine:jme3-lwjgl3:${ngeVersion}"
@@ -46,6 +48,12 @@ application {
     mainClass = project.findProperty('mainClass')
 }
 
+run {
+    jvmArgs = [
+        "-Djava.util.logging.config.file=${rootProject.projectDir}/dev-logging.properties",
+        '-ea'
+    ]
+}
 
 shadowJar {
     archiveBaseName = "${rootProject.name}"
@@ -138,8 +146,13 @@ task traceNative(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     jvmArgs = [
         "-agentlib:native-image-agent=config-merge-dir=${project.projectDir}/trace",
-        '-Djava.awt.headless=true', '-XstartOnFirstThread'
+        '-Djava.awt.headless=true'
     ]
+
+    if (getOsName() == 'macos') {
+        jvmArgs.add(0, '-XstartOnFirstThread')
+    }
+
     systemProperty 'java.awt.headless', 'false'
     systemProperty 'testMode', 'true'
     doFirst {
@@ -231,6 +244,8 @@ task buildNativeExecutable {
     }
     return commandLine
 }
+
+
 
 task buildInstaller(type: DefaultTask) {
     group = 'distribution'
