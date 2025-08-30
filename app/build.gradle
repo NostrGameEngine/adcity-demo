@@ -53,6 +53,9 @@ run {
         "-Djava.util.logging.config.file=${rootProject.projectDir}/dev-logging.properties",
         '-ea'
     ]
+    if (getOsName() == 'macos') {
+        jvmArgs('-XstartOnFirstThread')
+    }
 }
 
 shadowJar {
@@ -146,11 +149,11 @@ task traceNative(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     jvmArgs = [
         "-agentlib:native-image-agent=config-merge-dir=${project.projectDir}/trace",
-        '-Djava.awt.headless=true'
+        '-Djava.awt.headless=true',
     ]
 
     if (getOsName() == 'macos') {
-        jvmArgs.add(0, '-XstartOnFirstThread')
+        jvmArgs('-XstartOnFirstThread')
     }
 
     systemProperty 'java.awt.headless', 'false'
