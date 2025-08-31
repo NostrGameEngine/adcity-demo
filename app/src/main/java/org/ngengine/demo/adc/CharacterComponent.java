@@ -84,45 +84,113 @@ public class CharacterComponent implements Component<Object>, InputHandlerFragme
         }
     }
 
- 
+    private static final  float EYE_HEIGHT = 0.5f;
+    private static final  float WALK_BOB_FREQ = 1.3f; 
+    private static final  float WALK_BOB_AMPL = 0.12f; 
 
+ 
+    private static final float MOVE_SPEED = 0.14f;
+    private static final float ACCEL = 1.6f;
+    private static final float DECEL = 2.4f;
+    private static final float AIR_CONTROL = 0.55f;
+
+    private float bobPhase = 0f;
+    private final Vector3f camOffset = new Vector3f();
+    private final Vector3f moveVel = new Vector3f();
+    
     @Override
-    public void updateAppLogic(ComponentManager mng, float tpf){
+    public void updateAppLogic(ComponentManager mng, float tpf) {
+   
         ViewPortManager vpm = mng.getGlobalInstance(ViewPortManager.class);
         ViewPort mainViewPort = vpm.getMainSceneViewPort();
-        if(!debugCam){
-            Camera cam = mainViewPort.getCamera();
-            Vector3f camDir = cam.getDirection().clone().multLocal(0.1f);
-            Vector3f camLeft = cam.getLeft().clone().multLocal(0.1f);
-            camDir.y = 0;
-            camLeft.y = 0;
-            walkDirection.set(0, 0, 0);
-            if (left) {
-                walkDirection.addLocal(camLeft);
-            }
-            if (right) {
-                walkDirection.addLocal(camLeft.negate());
-            }
-            if (up) {
-                walkDirection.addLocal(camDir);
-            }
-            if (down) {
-                walkDirection.addLocal(camDir.negate());
-            }
-            if (jump){         
-                characterControl.jump();
-            }    
-            characterControl.setWalkDirection(walkDirection);            
-        }
 
         if (!debugCam) {
-            mainViewPort.getCamera().setLocation(characterControl.getPhysicsLocation());
-            mainViewPort.getCamera().getLocation().y -= 0.5f;
-            mainViewPort.getCamera().lookAtDirection(characterControl.getViewDirection(), Vector3f.UNIT_Y);
+            Camera cam = mainViewPort.getCamera();
+            Vector3f fwd = cam.getDirection().clone();
+            Vector3f leftV = cam.getLeft().clone();
+
+            fwd.y = 0;
+            leftV.y = 0;
+            if (fwd.lengthSquared() > 0)
+                fwd.normalizeLocal();
+            if (leftV.lengthSquared() > 0)
+                leftV.normalizeLocal();
+
+            int f = (up ? 1 : 0) + (down ? -1 : 0);
+            int s = (right ? 1 : 0) + (left ? -1 : 0);
+
+            Vector3f desiredDir = new Vector3f();
+            if (f != 0)
+                desiredDir.addLocal(fwd.multLocal((float) f));
+            if (s != 0)
+                desiredDir.addLocal(leftV.multLocal((float) -s));
+            if (desiredDir.lengthSquared() > 0f)
+                desiredDir.normalizeLocal();
+
+            float desiredSpeed = (desiredDir.lengthSquared() > 0f) ? MOVE_SPEED : 0f;
+            boolean onGround = isOnGround();
+
+            Vector3f desiredVel = desiredDir.mult(desiredSpeed);
+            Vector3f delta = desiredVel.subtract(moveVel);
+
+            float maxAccel = (onGround ? ACCEL : ACCEL * AIR_CONTROL) * tpf;
+            float deltaLen = delta.length();
+            if (deltaLen > 0f) {
+                float scale = (deltaLen > maxAccel) ? (maxAccel / deltaLen) : 1f;
+                moveVel.addLocal(delta.multLocal(scale));
+            }
+
+            if (desiredSpeed == 0f) {
+                float len = moveVel.length();
+                if (len > 0f) {
+                    float drop = DECEL * tpf;
+                    float newLen = Math.max(0f, len - drop);
+                    if (newLen == 0f)
+                        moveVel.set(0, 0, 0);
+                    else
+                        moveVel.multLocal(newLen / len);
+                }
+            }
+
+            if (jump)
+                characterControl.jump();
+
+            walkDirection.set(moveVel);
+            characterControl.setWalkDirection(moveVel);
+
+            applyFpsCamera(mainViewPort, tpf);
         }
     }
 
-  
+
+    private void applyFpsCamera(ViewPort mainViewPort, float tpf) {
+        boolean onGround = isOnGround();
+
+        float speed = Math.min(walkDirection.length() / MOVE_SPEED, 1f);
+        float x = 0f, y = 0f;
+
+        if (onGround) {
+            if (speed > 0.02f) {
+                float freq = WALK_BOB_FREQ * (0.8f + 0.4f * speed);
+                bobPhase += tpf * freq * FastMath.TWO_PI;
+
+                float amplY = WALK_BOB_AMPL * speed;
+
+                y = FastMath.sin(bobPhase) * amplY;
+            }
+        }
+
+        camOffset.set(x, y, 0f);
+
+        Vector3f base = characterControl.getPhysicsLocation().clone();
+        base.y -= EYE_HEIGHT;
+        mainViewPort.getCamera().setLocation(base.add(camOffset));
+
+        Vector3f viewDir = characterControl.getViewDirection().clone().normalizeLocal();
+        mainViewPort.getCamera().lookAtDirection(viewDir, Vector3f.UNIT_Y);
+    }
+
+
     public boolean isOnGround(){
         return characterControl.onGround();
     }
