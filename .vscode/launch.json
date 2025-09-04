@@ -16,7 +16,10 @@
             "name": "DesktopLauncher",
             "request": "launch",
             "mainClass": "org.ngengine.platform.DesktopLauncher",
-            "projectName": "platform-desktop"
+            "projectName": "platform-desktop",
+            "osx": {
+                "vmArgs": "-XstartOnFirstThread"
+            }
         }
     ]
 }
