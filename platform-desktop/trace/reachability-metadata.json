@@ -58,6 +58,9 @@
       "type": "[Lcom.simsilica.lemur.focus.FocusChangeListener;"
     },
     {
+      "type": "[Lcom.simsilica.lemur.input.AnalogFunctionListener;"
+    },
+    {
       "type": "[Lcom.simsilica.lemur.input.StateFunctionListener;"
     },
     {
@@ -574,6 +577,9 @@
     },
     {
       "type": "com.jme3.texture.plugins.AWTLoader"
+    },
+    {
+      "type": "com.jme3.texture.plugins.AWTWebpImageLoader"
     },
     {
       "type": "com.jme3.texture.plugins.DDSLoader"
@@ -3778,6 +3784,12 @@
     {
       "type": "java.lang.System",
       "methods": [
+        {
+          "name": "getProperty",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        },
         {
           "name": "load",
           "parameterTypes": [
