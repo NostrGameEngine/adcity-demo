@@ -39,6 +39,6 @@ if(withDesktopPlatform) {
     include('platform-desktop')
 }
 
-if (withAndroidPlatform) {
-    include('platform-android')
-}
+// if (withAndroidPlatform) {
+//     include('platform-android')
+// }
