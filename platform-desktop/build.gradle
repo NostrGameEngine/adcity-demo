@@ -1,0 +1,268 @@
+
+plugins {
+    id 'application'
+    id 'org.graalvm.buildtools.native' version '0.10.6'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+
+
+dependencies {
+    testImplementation libs.junit
+    implementation "org.ngengine:nge-platform-jvm:${ngePlatformVersion}"
+    implementation "org.ngengine:nge-app:${ngeVersion}"
+    implementation "org.ngengine:jme3-desktop:${ngeVersion}"
+    implementation "org.ngengine:jme3-lwjgl3:${ngeVersion}"
+    implementation project(':app')
+}
+
+ 
+application {
+    mainClass = "org.ngengine.platform.DesktopLauncher"
+}
+
+run {
+    jvmArgs = [
+        "-Djava.util.logging.config.file=${rootProject.projectDir}/dev-logging.properties",
+        '-ea'
+    ]
+    if (getOsName() == 'macos') {
+        jvmArgs('-XstartOnFirstThread')
+    }
+}
+
+shadowJar {
+    archiveBaseName = "${rootProject.name}"
+    archiveClassifier = 'portable'
+    archiveVersion = "${project.version}"
+    destinationDirectory = file("${rootProject.projectDir}/dist/portable")
+    manifest {
+        attributes 'Main-Class': application.mainClass.get()
+    }
+    mergeServiceFiles()
+}
+
+
+build.dependsOn shadowJar
+
+graalvmNative {
+    toolchainDetection = true
+    metadataRepository {
+        enabled = true
+    }
+    binaries {
+        main {
+            def buildName =  "${rootProject.name}";
+            imageName = buildName
+            def initAtRuntime = file("${project.projectDir}/graal.initialize-at-runtime.conf")
+                .text
+                .split("\\r?\\n")
+                .findAll { it && !it.startsWith('#') && !it.trim().isEmpty() }
+                .join(',')
+
+            mainClass = application.mainClass.get()
+                def arguments = [
+                '--report-unsupported-elements-at-runtime',
+                '--install-exit-handlers',
+                '--add-exports=java.desktop/sun.awt=ALL-UNNAMED',
+                '--add-exports=java.desktop/sun.java2d=ALL-UNNAMED',
+                '--add-exports=java.base/sun.nio.ch=ALL-UNNAMED',
+                '-H:+ReportExceptionStackTraces',
+                '-H:+PrintClassInitialization',
+                '--initialize-at-run-time=' + initAtRuntime,
+                '--no-server',
+                '--enable-url-protocols=http,https,file',
+                '--link-at-build-time',
+                '-H:+UnlockExperimentalVMOptions',
+                '--enable-native-access=ALL-UNNAMED',
+                '-H:+StaticExecutableWithDynamicLibC',
+                '-march=compatibility',
+                '-Djava.awt.headless=true',
+                '-H:IncludeResources=.*',
+                '-H:Name=' + buildName,
+                "-H:ConfigurationFileDirectories=${project.projectDir}/trace"
+            ]
+            
+            // Add G1 GC only if linux
+            if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+                arguments.add('--gc=G1')
+            }
+            
+            buildArgs.addAll(arguments)
+            sharedLibrary = false       
+        }
+    }
+}
+
+configurations { 
+    nativeImageCompileOnly {
+        canBeResolved = true
+    }
+}
+
+def getOsName(){
+    def osName = org.gradle.internal.os.OperatingSystem.current().getName().toLowerCase()
+
+    if (org.gradle.internal.os.OperatingSystem.current().isWindows()){
+        osName = "windows"
+    } else if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+        osName = "macos"
+    } else if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+        osName = "linux"
+    }
+
+    return osName
+}
+
+
+task traceNative(type: JavaExec) {
+    group = 'graalvm'
+    description = 'Trace reflection and resource usage'
+    mainClass =  application.mainClass.get()
+    classpath = sourceSets.main.runtimeClasspath
+    jvmArgs = [
+        "-agentlib:native-image-agent=config-merge-dir=${project.projectDir}/trace",
+        '-Djava.awt.headless=true',
+    ]
+
+    if (getOsName() == 'macos') {
+        jvmArgs('-XstartOnFirstThread')
+    }
+
+    systemProperty 'java.awt.headless', 'false'
+    systemProperty 'testMode', 'true'
+    doFirst {
+        println "Tracing to: ${project.projectDir}/trace"
+        println "Run the application and exercise ALL features:"
+        println "- Load different asset types (textures, models, sounds)"
+        println "- Use UI components"
+        println "- Trigger network operations"
+        println "- Test different game states"
+        println "Then close the application normally."
+    }
+    doLast {
+        println "Tracing complete! Generated/updated files:"
+        fileTree("${project.projectDir}/trace").each { file ->
+            if (file.isFile()) {
+                println "  - ${file.name} (${file.length()} bytes)"
+            }
+        }
+    }
+}
+
+
+task buildNativeExecutable {
+    group = 'graalvm'
+    description = 'Build native executable for current platform'
+    dependsOn 'nativeCompile' 
+    doLast {
+        def buildDirNative = "${project.buildDir}/native/nativeCompile"
+        def executableName = graalvmNative.binaries.main.imageName.get()
+        if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            executableName += '.exe'
+        }
+        
+        def osName = getOsName()
+        def osArch = System.getProperty("os.arch").toLowerCase()
+        def buildName =  "${rootProject.name}-${project.version}-${osName}-${osArch}";
+
+        def distDir = file("${rootProject.projectDir}/dist/${buildName}.buildNative")
+        distDir.mkdirs()
+        
+        copy {
+            from buildDirNative
+            into distDir
+            exclude '**/reports/**'
+            exclude '**/*.report'
+            exclude '**/*.dmp'
+            exclude '**/*.log'
+        }
+        
+        println "Native executable built: ${buildDirNative}/${executableName}"
+        println "All native build files copied to: ${distDir}"
+    }
+}
+
+
+
+ def jpackage(installerType, distDir){
+     def os = org.gradle.internal.os.OperatingSystem.current()
+
+
+     
+    def jarFile = shadowJar.archiveFile.get().asFile
+    def jarDir = jarFile.parentFile
+    def mainClass = application.mainClass.get()
+ 
+
+    def shadowJarFile = shadowJar.archiveFile.get().asFile
+
+    def commandLine = [
+        'jpackage',
+        '--input', jarDir.absolutePath,
+        '--main-jar', jarFile.name,
+        '--main-class', mainClass,
+        '--name', rootProject.name,
+        '--app-version', project.version,
+        '--type', installerType,
+        '--dest', distDir,
+        '--java-options',  project.findProperty('javaOptions') ?: '',
+        '--copyright',  project.findProperty('copyright')
+    ]
+
+    // Optional: platform-specific flags
+    if (os.isWindows()) {
+        commandLine += ['--win-menu', '--win-shortcut']
+    } else if (os.isMacOsX()) {
+        commandLine += ['--icon', "${rootProject.projectDir}/icon.icns"]
+    } else if (os.isLinux()) {
+        commandLine += ['--icon', "${rootProject.projectDir}/icon.png"]
+    }
+    return commandLine
+}
+
+
+
+task buildInstaller(type: DefaultTask) {
+    group = 'distribution'
+    description = 'Create native installer using jpackage'
+    dependsOn shadowJar
+    
+    def os = org.gradle.internal.os.OperatingSystem.current()
+    def osName = getOsName()
+    def osArch = System.getProperty("os.arch").toLowerCase()
+    def buildName =  "${rootProject.name}-${project.version}-${osName}-${osArch}-SETUP";
+    def distDir = file("${rootProject.projectDir}/dist/${buildName}.setup")
+
+   
+    doLast {
+        if (distDir.exists()) {
+            println "Deleting existing output directory: ${distDir}"
+            delete distDir
+        }
+
+        if(os.isWindows()){
+            exec {
+                commandLine jpackage('exe', distDir)
+            }
+        } else if(os.isMacOsX()){
+            exec {
+                commandLine jpackage('dmg', distDir)
+            }
+        } else if(os.isLinux()){
+            exec {
+                commandLine jpackage('deb', distDir)
+            }
+            exec {
+                commandLine jpackage('rpm', distDir)
+            }
+        } 
+    }
+}
+
+
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}

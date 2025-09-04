@@ -1,17 +1,26 @@
-package org.ngengine.demo.adc;
+package org.ngengine.app;
 
 import org.ngengine.NGEApplication;
+import org.ngengine.NGEApplication.NGEAppRunner;
 import org.ngengine.ads.ImmersiveAdComponent;
 import org.ngengine.components.ComponentManager;
+import org.ngengine.demo.adc.CharacterComponent;
+import org.ngengine.demo.adc.HudComponent;
+import org.ngengine.demo.adc.LoadingScreenComponent;
+import org.ngengine.demo.adc.MapComponent;
+import org.ngengine.demo.adc.PhysicsComponent;
+import org.ngengine.demo.adc.PostprocessingComponent;
+import org.ngengine.demo.adc.SoundComponent;
 import org.ngengine.gui.win.NWindowManagerComponent;
+import org.ngengine.nostr4j.keypair.NostrPublicKey;
 
 import com.jme3.system.AppSettings;
 
-public class AdcDemo {
+public class Main {
     
     
     
-    public static void main(String arg[]){
+    public static NGEAppRunner main(String arg[]){
         AppSettings settings = new AppSettings(true);
         settings.setRenderer(AppSettings.LWJGL_OPENGL32);
         settings.setWidth(1280);
@@ -24,13 +33,14 @@ public class AdcDemo {
         settings.setGraphicsDebug(false);
         settings.setX11PlatformPreferred(true);
         settings.setTitle("Nostr Game Engine Demo");
-        
-        
+        settings.setEmulateMouse(true);
+        settings.setEmulateKeyboard(true);
 
+
+        NostrPublicKey appId = NostrPublicKey.fromBech32("npub1tc32kq8hr992tzvt09rwuc5wk6aa08pquqawasv20acjp4umny5q6axr4t");
         
-        Runnable appBuilder = NGEApplication.createApp(settings, app -> {
+        NGEAppRunner appRunner = NGEApplication.createApp(appId, settings, app -> {
             ImmersiveAdComponent dep = app.enableAds();
-            
 
             ComponentManager mng = app.getComponentManager();
             mng.addAndEnableComponent(new LoadingScreenComponent(), null, new Object[] { NWindowManagerComponent.class });
@@ -50,6 +60,6 @@ public class AdcDemo {
             
         });
     
-        appBuilder.run();
+        return appRunner;
     }
 }

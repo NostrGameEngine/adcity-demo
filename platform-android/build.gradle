@@ -1,0 +1,58 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    compileSdk 36
+    namespace "${project.applicationId}"  
+
+    defaultConfig {
+        applicationId "${project.applicationId}"
+        minSdk 33
+        targetSdk 33
+        versionCode  project.versionCode.toInteger()
+        versionName  project.version
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    buildFeatures {
+        viewBinding true
+    }
+
+}
+
+
+dependencies {
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.constraintlayout
+    implementation libs.navigation.fragment
+    implementation libs.navigation.ui
+    testImplementation libs.junit.v4133snapshot
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
+
+
+    implementation project(':app') 
+    implementation "org.ngengine:nge-platform-android:${ngePlatformVersion}"
+    implementation "org.ngengine:nge-app:${ngeVersion}"
+    implementation "org.ngengine:jme3-android:${ngeVersion}"
+    implementation "org.ngengine:jme3-android-native:${ngeVersion}"
+
+}
