@@ -1,0 +1,15 @@
+import groovy.json.JsonSlurper
+
+gradle.ext.loadNgeAppProperties = { path ->
+    def ngeappFile = file(path)
+    if (ngeappFile.exists()) {
+        def jsonSlurper = new JsonSlurper()
+        def fileContent = ngeappFile.text.replaceAll(/\/\/.*?$/, '').trim() 
+        def ngeappConfig = jsonSlurper.parseText(fileContent)
+        
+        return ngeappConfig
+    } else {
+        logger.warn(path+" file not found")
+        return [:]
+    }
+}

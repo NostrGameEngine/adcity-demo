@@ -16,7 +16,7 @@ import com.simsilica.lemur.HAlignment;
 import com.simsilica.lemur.VAlignment;
 
 public class LoadingScreenComponent  implements Component<Object>, LogicFragment {
-    private Runnable closeHud;
+    private NHud hud;
     private NLabel txt;
     @Override
     public void onEnable(ComponentManager mng, Runner runner, DataStoreProvider dataStore, boolean firstTime,
@@ -28,23 +28,20 @@ public class LoadingScreenComponent  implements Component<Object>, LogicFragment
         windowManager.showCursor(false);
         
         txt = new NLabel("Loading");
-  
-        this.closeHud= windowManager.showWindow(
-            NHud.class,
-            (win, err) -> {     
-                win.setFitContent(false);           
-                win.setFullscreen(true);
-                txt.setFontSize(32);
-                txt.setTextVAlignment(VAlignment.Center);
-                txt.setTextHAlignment(HAlignment.Center);
-                win.getCenter().addChild(txt);                
-            }
-        );
+
+        hud = windowManager.showWindow(NHud.class);
+        hud.setFitContent(false);
+        hud.setFullscreen(true);
+        txt.setFontSize(32);
+        txt.setTextVAlignment(VAlignment.Center);
+        txt.setTextHAlignment(HAlignment.Center);
+        hud.getCenter().addChild(txt);
+
     }
 
     @Override
     public void onDisable(ComponentManager mng, Runner runner, DataStoreProvider dataStore) {
-        this.closeHud.run();
+        hud.close();
     }
 
     float time = 0;

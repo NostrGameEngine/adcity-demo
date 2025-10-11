@@ -13,10 +13,6 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
-      with:
-        lfs: true
-        fetch-depth: 1
-        
     
     - name: Set up JDK 21
       uses: actions/setup-java@v3
@@ -35,6 +31,37 @@ jobs:
         path: dist/portable/*-portable.jar
         retention-days: 7
 
+  build-web:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write 
+      id-token: write
+      pages: write
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 21
+      uses: actions/setup-java@v3
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: gradle
+    
+    - name: Build Web Application
+      run: ./gradlew buildBundledWebApp
+    
+    - name: Upload pages artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: 'dist/web-bundle'
+
+    - name: Deploy to GitHub Pages
+      if: github.event_name == 'release'  
+      id: deployment
+      uses: actions/deploy-pages@v4
+      
+
   build-native:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -51,10 +78,7 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
-      with:
-        lfs: true
-        fetch-depth: 1
-        
+    
     - name: Set up GraalVM
       uses: graalvm/setup-graalvm@v1
       with:
@@ -62,15 +86,6 @@ jobs:
         distribution: 'graalvm'
         github-token: ${{ secrets.GITHUB_TOKEN }}
         native-image-job-reports: 'true'
-
-    - name: Build Installer for ${{ matrix.platform }}
-      shell: bash
-      run: |
-          if [[ "${{ matrix.platform }}" == "linux" ]]; then
-            sudo apt-get install -y rpm
-          fi
-          ./gradlew buildInstaller
-          ls -R dist
         
     - name: Build Native Executable  for ${{ matrix.platform }}
       shell: bash

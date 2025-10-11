@@ -1,10 +1,15 @@
-# Ignore Gradle project-specific cache directory
 .gradle
-
-# Ignore Gradle build output directory
 build
 bin
 dist
 *.hprof
 .idea
 .DS_Store
+gradle-local.properties
+.idea/
+node_modules/
+*.map
+.sourcemaps
+.settings
+platform-web/.env.nostr-deploy.local
+local.properties

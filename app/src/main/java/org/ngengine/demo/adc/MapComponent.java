@@ -83,7 +83,6 @@ public class MapComponent implements Component<Object>, AsyncAssetLoadingFragmen
             preload.accept(sky);
         } catch(Exception e){
             e.printStackTrace();
-            System.exit(1);
         }
     }
 

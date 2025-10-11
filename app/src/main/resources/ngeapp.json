@@ -1,0 +1,47 @@
+{
+
+    "AppId": "npub146wutmuxfmnlx9fcty0lkns2rpwhnl57kpes26mmt4hygalsakrsdllryz",
+    "Display": 0,
+    "Width": 1280,
+    "Height": 720,
+    "Fullscreen": false,
+    "Resizable": true,
+    "Title": "AdCity",
+    "Version": "1.0.0",
+    "VersionCode": 1,
+    "ShortName": "adc",
+    "Namespace":"org.ngengine.adc",
+    "Copyright": "",
+    "VSync": true,
+    "GammaCorrection": true,
+    "ScreenOrientation": "landscape",
+    "relays": {
+        "blossom": {
+            "default": [
+                "https://blossom.primal.net",
+                "https://blossom.band/"
+            ]
+        },
+        "nostr": {
+            "ads":[
+                "wss://nostr.rblb.it",
+                "wss://relay.damus.io"
+            ],
+            "default": [
+                "wss://relay.ngengine.org",
+                "wss://relay2.ngengine.org",
+                "wss://relay.damus.io",
+                "wss://relay.primal.net",
+                "wss://relay.nostr.band",
+                "wss://relay.snort.social",
+                "wss://nos.lol"
+            ],
+            "nip46": [
+                "wss://relay.nsec.app",
+                "wss://relay.ngengine.org",
+                "wss://relay2.ngengine.org"
+            ]
+        }
+    } 
+
+}

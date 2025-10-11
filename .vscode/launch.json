@@ -4,22 +4,22 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    
         {
             "type": "java",
-            "name": "Current File",
-            "request": "launch",
-            "mainClass": "${file}"
-        },
-        {
-            "type": "java",
-            "name": "DesktopLauncher",
+            "name": "Debug Application",
             "request": "launch",
             "mainClass": "org.ngengine.platform.DesktopLauncher",
             "projectName": "platform-desktop",
             "osx": {
                 "vmArgs": "-XstartOnFirstThread"
-            }
+            },
+            "linux": {
+                "env": {
+                    "__GL_THREADED_OPTIMIZATIONS": "0"
+                }
+            },
+            "vmArgs": "-ea -Dthreadwarden=true -Djava.util.logging.config.file=${workspaceFolder}/dev-logging.properties",
+            
         }
     ]
 }

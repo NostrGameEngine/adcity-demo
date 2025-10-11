@@ -1,0 +1,231 @@
+project.ext {
+    dynamicTargetTypes = [
+        'com.jme3.export.Savable',
+        'com.jme3.asset.AssetLoader',
+        'com.jme3.asset.plugins.FileLocator',
+        'com.jme3.network.Message',
+        // 'com.jme3.network.serializing.Serializable',
+        // 'org.ngengine.network.protocol.NetworkSafe',
+        'org.ngengine.components.fragments.Fragment',
+        'org.ngengine.components.Component',
+        'com.jme3.asset.cache.AssetCache',
+        'com.jme3.asset.AssetProcessor',
+        'com.jme3.post.Filter',
+        'com.jme3.util.BufferAllocator',
+        'com.jme3.asset.AssetLocator',
+        'com.jme3.anim.util.JointModelTransform',
+        'com.jme3.material.logic.TechniqueDefLogic',
+        'com.jme3.material.Technique',
+        'com.jme3.material.TechniqueDef',
+        'com.jme3.util.clone.JmeCloneable',
+        'com.jme3.system.JmeSystem',
+        'com.jme3.system.JmeSystemDelegate',
+        'com.jme3.util.SafeArrayList',
+        'com.jme3.plugins.json.JsonParser',
+        'java.lang.Cloneable',
+        'com.jme3.asset.CloneableSmartAsset',
+        'com.jme3.post.SceneProcessor',
+        'com.jme3.util.res.ResourceLoader',
+        'org.ngengine.nostr4j.listeners.NostrRelayComponent',
+        'org.ngengine.auth.Auth',
+        'org.ngengine.gui.win.NWindow',
+        'org.ngengine.auth.AuthStrategy',
+        'org.ngengine.auth.AuthConfig',
+        'com.simsilica.lemur.core.GuiComponent',
+        'com.simsilica.lemur.Panel',
+
+        'com.simsilica.lemur.style.Styles',
+        'com.simsilica.lemur.style.StyleTree',
+        // 'com.simsilica.lemur.style.StyleDefaults',
+        // 'com.simsilica.lemur.style.StyleAttribute',
+        'com.simsilica.lemur.style.Selector',
+        'com.simsilica.lemur.style.ElementId',
+        'com.simsilica.lemur.style.Attributes',
+
+
+
+
+    ]
+    
+    dynamicAdditionalClasses = [
+        
+     ]
+    dynamicScanSubclasses = true
+    dynamicExcludePatterns = [
+        'org\\.teavm\\..*',
+        'java\\.lang\\..*',
+        'org\\.joda\\.time\\..*',
+        'java\\..*',
+        'javax\\..*',
+        'kotlin\\..*',
+        'com\\.google\\.gson\\..*',
+        'org\\.threeten\\..*',
+        'org\\.apache\\..*',
+        'com\\.simsilica\\.lemur\\.ColorChooser.*',
+        'org\\.slf4j\\..*'
+
+
+        
+    ]
+    dynamicClassesFound  =  new TreeSet<String>()  
+    dynamicReflectionClasses = new TreeSet<String>()
+}
+
+ext.scanClasspathForClasses = { project  ->
+    // Create a collection to hold all classpath entries
+    Set<File> classpath = new LinkedHashSet<>()
+    
+    // Add project's compiled classes
+    if (project.sourceSets.findByName('main')) {
+        classpath.addAll(project.sourceSets.main.output.classesDirs.files)
+        classpath.addAll(project.sourceSets.main.output.resourcesDir)
+    }
+    
+    // Add runtime dependencies
+    if (project.configurations.findByName('runtimeClasspath')) {
+        classpath.addAll(project.configurations.runtimeClasspath.files)
+    }
+    
+    // Add compile dependencies (some may not be in runtime)
+    if (project.configurations.findByName('compileClasspath')) {
+        classpath.addAll(project.configurations.compileClasspath.files)
+    }
+
+    // Keep only existing dirs/jars
+    classpath = classpath.findAll { 
+        it.exists() && (it.isDirectory() || it.name.endsWith('.jar')) 
+    } as LinkedHashSet<File>
+    
+    println "Scanning ${classpath.size()} classpath entries"
+
+    // Build a single loader for EVERYTHING
+    URL[] urls = classpath.collect { it.toURI().toURL() } as URL[]
+    ClassLoader scanLoader = new URLClassLoader(urls, this.class.classLoader)
+
+    // println "Target types: ${project.ext.dynamicTargetTypes}"
+
+    // Reset results
+    project.ext.dynamicClassesFound.clear()
+    project.ext.dynamicReflectionClasses.clear()
+
+    // Check target types loadable with the same loader
+    project.ext.dynamicTargetTypes.each { targetType ->
+        try {
+            Class.forName(targetType, false, scanLoader)
+            // println "✓ Target type $targetType is loadable"
+        } catch (Throwable t) {
+            println "✗ Target type $targetType is not loadable: ${t.class.simpleName}: ${t.message}"
+        }
+    }
+
+    // Seed manual classes
+    project.ext.dynamicAdditionalClasses.each { cn ->
+        project.ext.dynamicClassesFound.add(cn)
+        project.ext.dynamicReflectionClasses.add(cn)
+    }
+
+    int totalProcessed = 0
+    int totalMatched = 0
+
+    classpath.each { file ->
+        if (file.isDirectory()) {
+            def r = scanDirectory(file, file, project.ext.dynamicTargetTypes,
+                                  project.ext.dynamicClassesFound, project.ext.dynamicReflectionClasses,
+                                  project.ext.dynamicScanSubclasses, project.ext.dynamicExcludePatterns,
+                                  scanLoader)
+            totalProcessed += r.processed; totalMatched += r.matched
+        } else {
+            def r = scanJar(file, project.ext.dynamicTargetTypes,
+                            project.ext.dynamicClassesFound, project.ext.dynamicReflectionClasses,
+                            project.ext.dynamicScanSubclasses, project.ext.dynamicExcludePatterns,
+                            scanLoader)
+            totalProcessed += r.processed; totalMatched += r.matched
+        }
+    }
+
+    println "Processed ${totalProcessed} classes total"
+    println "Matched ${totalMatched} classes"
+    println "Found ${project.ext.dynamicClassesFound.size()} dynamic classes"
+
+    [classes: project.ext.dynamicClassesFound, reflectionClasses: project.ext.dynamicReflectionClasses]
+}
+def scanDirectory(baseDir, dir, targetTypes, classesFound, reflectionClasses, scanSubclasses, excludePatterns, ClassLoader scanLoader) {
+    int processed = 0, matched = 0
+    dir.eachFileRecurse { file ->
+        if (file.isFile() && file.name.endsWith('.class')) {
+            def rel = baseDir.toPath().relativize(file.toPath()).toString()
+            def className = rel.substring(0, rel.length() - 6).replace(File.separator, '.')
+            processed++
+            if (!className.contains('$') && className != 'module-info' && className != 'package-info' && !isExcluded(className, excludePatterns)) {
+                try {
+                    Class<?> clazz = Class.forName(className, false, scanLoader)
+                    if (isCompatibleType(clazz, targetTypes, scanSubclasses, scanLoader)) {
+                        classesFound.add(className)
+                        reflectionClasses.add(className)
+                        matched++
+                    }
+                } catch (Throwable ignored) {}
+            }
+        }
+    }
+    [processed: processed, matched: matched]
+}
+
+def scanJar(jarFile, targetTypes, classesFound, reflectionClasses, scanSubclasses, excludePatterns, ClassLoader scanLoader) {
+    int processed = 0, matched = 0
+    try {
+        new java.util.jar.JarFile(jarFile).withCloseable { jar ->
+            jar.entries().findAll { !it.isDirectory() && it.name.endsWith('.class') }.each { e ->
+                def className = e.name.substring(0, e.name.length() - 6).replace('/', '.')
+                processed++
+                if (!className.contains('$') && className != 'module-info' && className != 'package-info' && !isExcluded(className, excludePatterns)) {
+                    try {
+                        Class<?> clazz = Class.forName(className, false, scanLoader)
+                        if (isCompatibleType(clazz, targetTypes, scanSubclasses, scanLoader)) {
+                            classesFound.add(className)
+                            reflectionClasses.add(className)
+                            matched++
+                        }
+                    } catch (Throwable ignored) {}
+                }
+            }
+        }
+    } catch (Throwable t) {
+        println "Error scanning JAR ${jarFile.name}: ${t.message}"
+    }
+    [processed: processed, matched: matched]
+}
+
+def isCompatibleType(Class<?> clazz, Collection<String> targetTypes, boolean scanSubclasses, ClassLoader scanLoader) {
+    if (clazz == null) return false
+
+    // Assignable to any target class/interface
+    for (def targetType : targetTypes) {
+        try {
+            Class<?> targetClass = Class.forName(targetType, false, scanLoader)
+            if (targetClass.isAssignableFrom(clazz)) return true
+        } catch (Throwable ignored) {}
+    }
+
+    // Traverse interfaces
+    for (def iface : clazz.interfaces) {
+        if (targetTypes.contains(iface.name) || (scanSubclasses && isCompatibleType(iface, targetTypes, scanSubclasses, scanLoader))) {
+            return true
+        }
+    }
+
+    // Traverse superclass
+    scanSubclasses && isCompatibleType(clazz.superclass, targetTypes, scanSubclasses, scanLoader)
+}
+
+// Helper to check if a class should be excluded
+def isExcluded(String className, Collection<String> excludePatterns) {
+    for (def pattern : excludePatterns) {
+        if (className.matches(pattern)) {
+            return true
+        }
+    }
+    return false
+}
+
+ 

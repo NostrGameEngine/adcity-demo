@@ -6,6 +6,12 @@ plugins {
 }
 
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21) 
+    }
+}
+
 
 dependencies {
     testImplementation libs.junit
@@ -16,10 +22,16 @@ dependencies {
     implementation project(':app')
 }
 
- 
 application {
     mainClass = "org.ngengine.platform.DesktopLauncher"
 }
+
+configurations { 
+    nativeImageCompileOnly {
+        canBeResolved = true
+    }
+}
+
 
 run {
     jvmArgs = [
@@ -42,8 +54,6 @@ shadowJar {
     mergeServiceFiles()
 }
 
-
-build.dependsOn shadowJar
 
 graalvmNative {
     toolchainDetection = true
@@ -84,9 +94,9 @@ graalvmNative {
             ]
             
             // Add G1 GC only if linux
-            if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
-                arguments.add('--gc=G1')
-            }
+            // if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+            //     arguments.add('--gc=G1')
+            // }
             
             buildArgs.addAll(arguments)
             sharedLibrary = false       
@@ -94,11 +104,6 @@ graalvmNative {
     }
 }
 
-configurations { 
-    nativeImageCompileOnly {
-        canBeResolved = true
-    }
-}
 
 def getOsName(){
     def osName = org.gradle.internal.os.OperatingSystem.current().getName().toLowerCase()
@@ -116,8 +121,6 @@ def getOsName(){
 
 
 task traceNative(type: JavaExec) {
-    group = 'graalvm'
-    description = 'Trace reflection and resource usage'
     mainClass =  application.mainClass.get()
     classpath = sourceSets.main.runtimeClasspath
     jvmArgs = [
@@ -152,8 +155,6 @@ task traceNative(type: JavaExec) {
 
 
 task buildNativeExecutable {
-    group = 'graalvm'
-    description = 'Build native executable for current platform'
     dependsOn 'nativeCompile' 
     doLast {
         def buildDirNative = "${project.buildDir}/native/nativeCompile"
@@ -185,84 +186,10 @@ task buildNativeExecutable {
 
 
 
- def jpackage(installerType, distDir){
-     def os = org.gradle.internal.os.OperatingSystem.current()
-
-
-     
-    def jarFile = shadowJar.archiveFile.get().asFile
-    def jarDir = jarFile.parentFile
-    def mainClass = application.mainClass.get()
- 
-
-    def shadowJarFile = shadowJar.archiveFile.get().asFile
-
-    def commandLine = [
-        'jpackage',
-        '--input', jarDir.absolutePath,
-        '--main-jar', jarFile.name,
-        '--main-class', mainClass,
-        '--name', rootProject.name,
-        '--app-version', project.version,
-        '--type', installerType,
-        '--dest', distDir,
-        '--java-options',  project.findProperty('javaOptions') ?: '',
-        '--copyright',  project.findProperty('copyright')
-    ]
-
-    // Optional: platform-specific flags
-    if (os.isWindows()) {
-        commandLine += ['--win-menu', '--win-shortcut']
-    } else if (os.isMacOsX()) {
-        commandLine += ['--icon', "${rootProject.projectDir}/icon.icns"]
-    } else if (os.isLinux()) {
-        commandLine += ['--icon', "${rootProject.projectDir}/icon.png"]
-    }
-    return commandLine
-}
-
-
-
-task buildInstaller(type: DefaultTask) {
-    group = 'distribution'
-    description = 'Create native installer using jpackage'
-    dependsOn shadowJar
-    
-    def os = org.gradle.internal.os.OperatingSystem.current()
-    def osName = getOsName()
-    def osArch = System.getProperty("os.arch").toLowerCase()
-    def buildName =  "${rootProject.name}-${project.version}-${osName}-${osArch}-SETUP";
-    def distDir = file("${rootProject.projectDir}/dist/${buildName}.setup")
-
-   
+task buildPortable {
+    dependsOn shadowJar     
     doLast {
-        if (distDir.exists()) {
-            println "Deleting existing output directory: ${distDir}"
-            delete distDir
-        }
-
-        if(os.isWindows()){
-            exec {
-                commandLine jpackage('exe', distDir)
-            }
-        } else if(os.isMacOsX()){
-            exec {
-                commandLine jpackage('dmg', distDir)
-            }
-        } else if(os.isLinux()){
-            exec {
-                commandLine jpackage('deb', distDir)
-            }
-            exec {
-                commandLine jpackage('rpm', distDir)
-            }
-        } 
+        println "Portable JAR created: ${shadowJar.destinationDirectory}/${shadowJar.archiveFileName.get()}"
     }
 }
 
-
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}

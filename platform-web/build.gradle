@@ -1,0 +1,445 @@
+
+plugins {
+    id 'com.github.node-gradle.node' version '7.1.0'
+    id "java"
+    id "war"
+    id "org.teavm" version "${teaVmVersion}"
+}
+
+import java.security.MessageDigest
+import java.nio.file.Files
+import java.nio.file.Paths
+apply from: "${rootDir}/gradle/libs/class-finder.gradle"
+
+configurations {
+    withResources {
+        canBeResolved = true
+    }
+}
+
+node {
+    download = true
+    distBaseUrl = null
+    version = "22.18.0"
+}
+ 
+configurations.configureEach {
+    exclude group: 'org.ngengine', module: 'jme3-jbullet'
+}
+
+dependencies {
+    implementation "org.teavm:teavm-jso:${teaVmVersion}"
+    implementation "org.teavm:teavm-jso-apis:${teaVmVersion}"
+    implementation "org.teavm:teavm-metaprogramming-api:${teaVmVersion}"
+    implementation "org.teavm:teavm-classlib:${teaVmVersion}"
+    implementation "org.teavm:teavm-tooling:${teaVmVersion}"
+    implementation "org.teavm:teavm-core:${teaVmVersion}"
+
+    implementation "org.ngengine:nge-platform-teavm:${ngePlatformVersion}"
+    implementation "org.ngengine:nge-app:${ngeVersion}"
+    implementation "org.ngengine:jme3-plugins-json:${ngeVersion}"
+    implementation "org.ngengine:nge-web:${ngeVersion}"
+    implementation "org.ngengine:nge-web-bullet:${ngeVersion}"
+
+    implementation project(':app')
+
+    withResources  project(':app')
+    withResources  "org.ngengine:nge-platform-teavm:${ngePlatformVersion}"
+    withResources  "org.ngengine:nge-web:${ngeVersion}"
+    withResources  "org.ngengine:nge-web-bullet:${ngeVersion}" 
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21) 
+    }
+}
+
+sourceSets {
+    test {
+        resources {
+            srcDirs = ['src/test/resources', 'src/main/resources']            
+        }
+    }
+}
+
+def binaryExclusions = [
+    '**/*.class',
+    '**/*.dll',
+    '**/*.so',
+    '**/*.dylib',
+    '**/package.html',
+    "**/*.kotlin_builtins",
+    "**/build.data",
+    "**/*.xml",
+    "**/test*.png",
+    // '**/*.java'
+]
+
+
+
+def generateHashes(File dir) {
+    def hashes = []
+    Files.walk(Paths.get(dir.toURI())).filter { 
+        Files.isRegularFile(it) 
+    }.forEach { file ->
+        def relativePath = dir.toPath().relativize(file).toString()
+        if(relativePath.endsWith(".class")) return;
+        if(relativePath.endsWith(".java")) return;
+        def hash = generateSHA256(file.toFile())
+        def size = file.toFile().length()
+        hashes << "$hash $size $relativePath"
+    }
+    return hashes.join('\n')
+}
+
+def generateSHA256(file) {
+    def messageDigest = MessageDigest.getInstance("SHA-256")
+    file.eachByte(4096) { bytes, len ->
+        messageDigest.update(bytes, 0, len)
+    }
+    return messageDigest.digest().collect { String.format("%02x", it) }.join()
+}
+
+task copyAllResources {
+
+    dependsOn configurations.runtimeClasspath.getTaskDependencyFromProjectDependency(true, 'jar')
+    dependsOn 'jar'
+
+    ['compileTeavmJava','processTeavmResources','compileJava','processResources']
+        .each { tn -> if (tasks.findByName(tn) != null) dependsOn tn }
+
+    doLast {
+        def dest = file("${rootDir}/dist/web")
+        dest.mkdirs()
+
+        def safeCopy = { spec ->
+            copy {
+                into dest
+                from spec
+                exclude(*binaryExclusions)
+                exclude '**/module-info.class'
+                includeEmptyDirs = false
+                duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            }
+        }
+        safeCopy('src/main/resources')
+
+        def runtimeFiles = configurations.runtimeClasspath.resolvedConfiguration.lenientConfiguration.files
+        runtimeFiles.each { f ->
+            if (!f.exists()) return
+            if (f.isDirectory()) {
+                safeCopy(f)
+            } else if (f.name.endsWith('.jar')) {
+                safeCopy(project.zipTree(f))
+            }
+        }
+
+        println "Resource aggregation complete. Total files: " +  fileTree(dest).matching { exclude(*binaryExclusions) }.files.size()
+
+        def manifestFile = file("${rootDir}/dist/web/manifest.json")
+        if (manifestFile.exists()) {
+            def manifest = new groovy.json.JsonSlurper().parseText(manifestFile.text)
+            manifest.name = Title
+            manifest.short_name = ShortName
+
+            manifestFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(manifest))
+            println "Updated manifest.json: name=$Title, short_name=$ShortName"
+        }
+
+        def outputDir = file("${rootDir}/dist/web/")
+        def outputFile = file("${rootDir}/dist/web/resources.index.txt")
+
+        outputFile.text = generateHashes(outputDir)
+    }
+}
+
+
+def generateClassListFile(File outputFile, Collection<String> classes, Closure<String> lineFormatter) {
+    outputFile.parentFile.mkdirs()
+    outputFile.text = classes.collect(lineFormatter).join('\n')
+    println "Generated class list at ${outputFile.absolutePath}"
+}
+
+def generateCodeFromTemplate(File outputFile, String template, Map<String, Object> vars) {
+    outputFile.parentFile.mkdirs()
+    String result = template
+    vars.each { key, value ->
+        result = result.replace("{{$key}}", value.toString())
+    }
+    outputFile.text = result
+    println "Generated code at ${outputFile.absolutePath}"
+}
+
+task scanClasspathForTeaVM {
+    dependsOn configurations.compileClasspath.getTaskDependencyFromProjectDependency(true, 'classes')
+    doLast {
+        def scanResults = project.scanClasspathForClasses(project)
+
+        def preserveListFile = file("${buildDir}/generated/teaReflectList.txt")
+        generateClassListFile(preserveListFile, scanResults.classes) { className ->
+            "**/${className.replace('.', '/')}.java"
+        }
+
+        def reflectionSupplierFile = file("${buildDir}/generated/teaReflect.java")
+        def template = """private static void initGenerated() {
+{{classInitializers}}
+    }"""
+        generateCodeFromTemplate(reflectionSupplierFile, template, [
+            classInitializers: scanResults.reflectionClasses.collect {
+                "        TeaReflectionSupplier.addReflectionClass(\"${it}\");"
+            }.join('\n')
+        ])
+    }
+}
+
+task updateTeaReflectionSupplier {
+    dependsOn scanClasspathForTeaVM
+    doLast {
+        def reflectionSupplierFile = file("${buildDir}/generated/teaReflect.java")
+        def teaReflectionSupplierFile = file("${projectDir}/src/main/java/org/ngengine/platform/TeaReflectionSupplier.java")
+        
+        if (reflectionSupplierFile.exists() && teaReflectionSupplierFile.exists()) {
+            def content = teaReflectionSupplierFile.text
+            def initGeneratedContent = reflectionSupplierFile.text
+            content = content.replaceAll(/(?s)private static void initGenerated\(\)\s*\{.*?\}/, initGeneratedContent)
+            teaReflectionSupplierFile.text = content
+            println "Updated TeaReflectionSupplier.java with generated initGenerated() method"
+        }
+    }
+}
+
+tasks.named('compileJava').configure {
+    dependsOn 'updateTeaReflectionSupplier'
+}
+
+teavm.js {
+    addedToWebApp = false
+    mainClass = "org.ngengine.platform.WebLauncher"
+    obfuscated = false
+    debugInformation = true
+    strict= false
+    outOfProcess=false
+    // optimization=org.teavm.gradle.api.OptimizationLevel.NONE
+    sourceMap=true    
+    moduleType = org.teavm.gradle.api.JSModuleType.ES2015  
+
+    def classesToPreserve=[]
+    def preserveListFile = file("${buildDir}/generated/teaReflectList.txt")
+    if (preserveListFile.exists()) {
+        preserveListFile.readLines().each { line ->
+            if (line.trim()) {
+                classesToPreserve.add(line.trim())
+            }
+        }
+    }
+
+    def fqcnToPreserve = new LinkedHashSet<String>()
+
+    def toFqcn = { File baseDir, File f ->
+        def rel = f.path.substring(baseDir.path.length() + 1)
+        rel = rel.replaceAll(/\.java$/, '').replaceAll(/\.class$/, '')
+        rel.replace('/', '.')
+    }
+
+    rootProject.allprojects.each { prj ->
+        def ss = prj.extensions.findByName('sourceSets')
+        def mainSS = ss?.findByName('main')
+        if (mainSS == null) return
+        mainSS.java.srcDirs.each { srcDir ->
+            if (!srcDir.exists()) return
+            fileTree(srcDir).matching { include classesToPreserve }.forEach { f ->
+                def fqcn = toFqcn(srcDir, f)
+                fqcnToPreserve.add(fqcn)
+            }
+        }
+    }
+
+    def rtArtifacts = configurations.runtimeClasspath.resolvedConfiguration.lenientConfiguration.files
+    rtArtifacts.each { artifact ->
+        if (!artifact.exists()) return
+        if (artifact.isDirectory()) {
+            fileTree(artifact).matching { include classesToPreserve.collect { it.replace('.java', '.class') } }.forEach { f ->
+                def fqcn = toFqcn(artifact, f)
+                fqcnToPreserve.add(fqcn)
+            }
+        } else if (artifact.name.endsWith('.jar')) {
+            def classFilePatterns = classesToPreserve.collect { it.replace('.java', '.class') }
+                .collect { it.replace('**/', '') } 
+            
+            try {
+                def jarFile = new java.util.jar.JarFile(artifact)
+                def entries = jarFile.entries()
+                
+                while (entries.hasMoreElements()) {
+                    def entry = entries.nextElement()
+                    if (entry.isDirectory()) continue
+                    
+                    def entryName = entry.getName()
+                    if (classFilePatterns.any { pattern -> 
+                        entryName.endsWith(pattern) || entryName.matches(pattern.replace("*", ".*")) 
+                    }) {
+                        def fqcn = entryName.replaceAll(/\.class$/, '').replace('/', '.')
+                        fqcnToPreserve.add(fqcn)
+                    }
+                }
+                jarFile.close()
+            } catch (Exception e) {
+                println "WARNING: Could not process JAR file: ${artifact.name} - ${e.message}"
+            }
+        }
+    }
+      
+    fqcnToPreserve.each { 
+        preservedClasses.add(it) 
+    }
+
+    targetFileName = "webapp.js"
+}
+
+
+
+task buildWebApp {
+    dependsOn  'compileJava', 'generateJavaScript', 'copyAllResources'
+    doLast {
+        def jsDir = file("$buildDir/generated/teavm/js")
+        def distDir = file("${rootDir}/dist/web")
+        distDir.mkdirs()
+        copy {
+            from jsDir
+            into distDir
+        }
+        println "Copied web app to: $distDir"
+    }
+}
+
+
+task buildBundledWebApp {
+    dependsOn buildWebApp    
+    doLast {
+        def jsDir = file("$rootDir/dist/web")
+        def bundledJsDir = file("$rootDir/dist/web-bundle")
+        def bundleIgnoreFile = file("$jsDir/bundle-ignore.txt")
+        def zipFile = file("$bundledJsDir/ngeapp-bundle.zip")
+        def configFile = file("$bundledJsDir/ngeapp.json")
+        
+        bundledJsDir.mkdirs()
+        
+        // Read ignore patterns from bundle-ignore.txt
+        def ignorePatterns = []
+        if (bundleIgnoreFile.exists()) {
+            bundleIgnoreFile.eachLine { line -> 
+                if (line.trim() && !line.startsWith('//')) ignorePatterns.add(line.trim()) 
+            }
+            println "Found ${ignorePatterns.size()} patterns to exclude from bundle"
+        } else {
+            println "Warning: bundle-ignore.txt not found at ${bundleIgnoreFile}. No files will be excluded from the bundle."
+        }
+
+        
+        // Create zip with everything except ignored files
+        ant.zip(destfile: zipFile) {
+            fileset(dir: jsDir) {
+                ignorePatterns.each { pattern ->
+                    if (pattern.endsWith('/')) {
+                        exclude(name: "${pattern}**")
+                    } else {
+                        exclude(name: pattern)
+                    }
+                }
+            }
+        }
+
+
+        // Copy ignored files to bundledjs directory
+        if (!ignorePatterns.isEmpty()) {
+            println "Copying excluded files to bundled directory..."
+            
+            delete fileTree(bundledJsDir).matching { include '**/*' exclude 'ngeapp-bundle.zip', 'ngeapp-config.json' }
+            
+            fileTree(jsDir).visit { fileDetails ->
+                if (fileDetails.isDirectory()) return
+                
+                def relativePath = fileDetails.relativePath.toString()
+                def matchesPattern = false
+                
+                for (pattern in ignorePatterns) {
+                    if (pattern.endsWith('/')) {
+                        if (relativePath.startsWith(pattern) || relativePath.startsWith(pattern.substring(0, pattern.length() - 1))) {
+                            matchesPattern = true
+                            break
+                        }
+                    } else {
+                        if (relativePath == pattern) {
+                            matchesPattern = true
+                            break
+                        }
+                    }
+                }
+                
+                if (matchesPattern) {
+                    println "Copying excluded file: $relativePath"
+                    copy {
+                        from fileDetails.file
+                        into new File(bundledJsDir, fileDetails.relativePath.parent.toString())
+                    }
+                }
+            }
+            println "Finished copying excluded files"
+        }
+        // Calculate hash of zip file
+        def hash = generateSHA256(zipFile)
+        
+        // Set bundle in config file
+        def config = [:]
+        if (configFile.exists()) {
+            try {
+                config = new groovy.json.JsonSlurper().parseText(configFile.text)
+                println "Updating existing config file: $configFile.path"
+            } catch (Exception e) {
+                println "Warning: Could not parse existing config file: $e.message"
+                config = [:]
+            }
+        }
+        
+        config.bundle = "ngeapp-bundle.zip"
+        config.bundleHash = hash
+        configFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
+        
+        println "Created bundle: $zipFile.path"
+        println "Bundle hash: $hash"
+        println "Config written to: $configFile.path"
+
+
+        
+    }
+}
+
+
+task npmCi(type: NpmTask) {
+    workingDir = file("${projectDir}")
+    args = ['ci']
+}
+
+task runWebApp(type: NpxTask) {
+    dependsOn buildWebApp
+    workingDir = file("$rootDir/dist/web")
+    command = 'http-server'
+    args = [ '.', '-p', '8000']
+}
+
+task runBundledWebApp(type: NpxTask) {
+    dependsOn buildBundledWebApp
+    workingDir = file("$rootDir/dist/web-bundle")
+    command = 'http-server'
+    args = [ '.', '-p', '8000']
+}
+
+task deployWebApp(type: NpxTask) {
+    dependsOn buildBundledWebApp
+    dependsOn npmCi
+    command = 'nostr-deploy-cli'
+    args = ['deploy','--skip-setup', '-d', "${rootDir}/dist/web-bundle"]
+    workingDir = file("${projectDir}")
+}
+

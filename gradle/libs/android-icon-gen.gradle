@@ -1,0 +1,54 @@
+import javax.imageio.ImageIO
+import java.awt.Image
+import java.awt.image.BufferedImage
+import java.awt.geom.Ellipse2D
+
+gradle.ext.generateAndroidIcons = { inputLogoPath, outputDirPath ->
+    def inputLogo = file(inputLogoPath)
+    def outputDir = file(outputDirPath)
+
+    def densities = [
+        mdpi : 48,
+        hdpi : 72,
+        xhdpi: 96,
+        xxhdpi: 144,
+        xxxhdpi: 192
+    ]
+
+    if (!inputLogo.exists()) {
+        throw new GradleException("Logo file not found at ${inputLogo}")
+    }
+
+    def original = ImageIO.read(inputLogo)
+
+    densities.each { name, size ->
+        def dir = new File(outputDir, "mipmap-${name}")
+        dir.mkdirs()
+
+        // --- Regular square launcher ---
+        def square = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB)
+        def g = square.createGraphics()
+        g.drawImage(original.getScaledInstance(size, size, Image.SCALE_SMOOTH), 0, 0, null)
+        g.dispose()
+
+        def launcherFile = new File(dir, "ic_launcher.png")
+        ImageIO.write(square, "png", launcherFile)
+        def launcherFileF = new File(dir, "ic_launcher_foreground.png")
+        ImageIO.write(square, "png", launcherFileF)
+        println "Generated ${launcherFile} (${size}x${size})"
+
+        // --- Round launcher ---
+        def round = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB)
+        def gr = round.createGraphics()
+
+        // Create circular clipping mask
+        gr.setClip(new Ellipse2D.Float(0, 0, size, size))
+        gr.drawImage(original.getScaledInstance(size, size, Image.SCALE_SMOOTH), 0, 0, null)
+        gr.dispose()
+
+        def roundFile = new File(dir, "ic_launcher_round.png")
+        ImageIO.write(round, "png", roundFile)
+        println "Generated ${roundFile} (circular ${size}x${size})"
+    }
+
+}

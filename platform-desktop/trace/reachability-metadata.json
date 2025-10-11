@@ -58,12 +58,6 @@
       "type": "[Lcom.simsilica.lemur.focus.FocusChangeListener;"
     },
     {
-      "type": "[Lcom.simsilica.lemur.input.AnalogFunctionListener;"
-    },
-    {
-      "type": "[Lcom.simsilica.lemur.input.StateFunctionListener;"
-    },
-    {
       "type": "[Ljava.awt.event.MouseMotionListener;"
     },
     {
@@ -76,106 +70,7 @@
       ]
     },
     {
-      "type": "com.bulletphysics.collision.dispatch.CompoundCollisionAlgorithm",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.bulletphysics.collision.dispatch.ConvexConvexAlgorithm",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
       "type": "com.bulletphysics.collision.dispatch.UnionFind$Element",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.bulletphysics.collision.narrowphase.DiscreteCollisionDetectorInterface$ClosestPointInput",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.bulletphysics.collision.narrowphase.GjkEpaSolver$Face",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.bulletphysics.collision.narrowphase.GjkEpaSolver$He",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.bulletphysics.collision.narrowphase.GjkEpaSolver$Mkv",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.bulletphysics.collision.narrowphase.ManifoldPoint",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.bulletphysics.collision.narrowphase.PersistentManifold",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.bulletphysics.collision.narrowphase.VoronoiSimplexSolver$SubSimplexClosestResult",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.bulletphysics.dynamics.constraintsolver.SolverBody",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.bulletphysics.dynamics.constraintsolver.SolverConstraint",
       "methods": [
         {
           "name": "<init>",
@@ -274,15 +169,6 @@
       "type": "com.jme3.cursors.plugins.CursorLoader"
     },
     {
-      "type": "com.jme3.export.SavableWrapSerializable",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
       "type": "com.jme3.export.binary.BinaryLoader"
     },
     {
@@ -290,24 +176,6 @@
       "methods": [
         {
           "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.jme3.light.PointLight",
-      "methods": [
-        {
-          "name": "clone",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.jme3.light.SpotLight",
-      "methods": [
-        {
-          "name": "clone",
           "parameterTypes": []
         }
       ]
@@ -483,15 +351,6 @@
       ]
     },
     {
-      "type": "com.jme3.scene.plugins.gltf.LightsPunctualExtensionLoader",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
       "type": "com.jme3.scene.plugins.gltf.UserDataLoader",
       "methods": [
         {
@@ -577,9 +436,6 @@
     },
     {
       "type": "com.jme3.texture.plugins.AWTLoader"
-    },
-    {
-      "type": "com.jme3.texture.plugins.AWTWebpImageLoader"
     },
     {
       "type": "com.jme3.texture.plugins.DDSLoader"
@@ -1230,8 +1086,7 @@
     },
     {
       "type": "java.nio.DirectFloatBufferU",
-      "allDeclaredFields": true,
-      "unsafeAllocated": true
+      "allDeclaredFields": true
     },
     {
       "type": "java.nio.DirectIntBufferU",
@@ -3152,9 +3007,6 @@
     },
     {
       "type": "org.ngengine.nostr4j.signer.NostrNIP46Signer"
-    },
-    {
-      "type": "org.ngengine.store.DataStore$SerializableEntry"
     }
   ],
   "jni": [
@@ -3784,12 +3636,6 @@
     {
       "type": "java.lang.System",
       "methods": [
-        {
-          "name": "getProperty",
-          "parameterTypes": [
-            "java.lang.String"
-          ]
-        },
         {
           "name": "load",
           "parameterTypes": [

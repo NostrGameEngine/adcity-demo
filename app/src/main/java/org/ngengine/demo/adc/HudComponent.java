@@ -15,7 +15,7 @@ import com.simsilica.lemur.HAlignment;
 import com.simsilica.lemur.VAlignment;
 
 public class HudComponent implements Component<Object>, InputHandlerFragment {
-    private Runnable closeHud;
+    private NHud hud;
 
     @Override
     public void onEnable(ComponentManager mng, Runner runner, DataStoreProvider dataStore, boolean firstTime,
@@ -26,22 +26,18 @@ public class HudComponent implements Component<Object>, InputHandlerFragment {
         
         windowManager.showCursor(false);
                 
-        this.closeHud= windowManager.showWindow(
-            NHud.class,
-            (win, err) -> {     
-                win.setFitContent(false);           
-                win.setFullscreen(true);
-                NLabel crossair = new NLabel("+");
-                crossair.setTextVAlignment(VAlignment.Center);
-                crossair.setTextHAlignment(HAlignment.Center);
-                win.getCenter().addChild(crossair);                
-            }
-        );
+        this.hud = windowManager.showWindow( NHud.class  );
+        hud.setFitContent(false);
+        hud.setFullscreen(true);
+        NLabel crossair = new NLabel("+");
+        crossair.setTextVAlignment(VAlignment.Center);
+        crossair.setTextHAlignment(HAlignment.Center);
+        hud.getCenter().addChild(crossair);
     }
 
     @Override
     public void onDisable(ComponentManager mng, Runner runner, DataStoreProvider dataStore) {
-        this.closeHud.run();
+        hud.close();
     }
 
     @Override

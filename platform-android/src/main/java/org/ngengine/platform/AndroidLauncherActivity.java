@@ -13,22 +13,22 @@ import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
+import org.ngengine.app.Main;
+import org.ngengine.platform.android.AndroidThreadedPlatform;
 
-import org.ngengine.demo.AdcDemo.R;
 
 public class AndroidLauncherActivity extends AppCompatActivity {
-
-    private AndroidLauncherFragment launcherFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_android_launcher);
+        int layoutId = getResources().getIdentifier("activity_android_launcher", "layout", getPackageName());
+        setContentView(layoutId);
 
-        launcherFragment = new AndroidLauncherFragment();
+        int containerId = getResources().getIdentifier("fragment_container", "id", getPackageName());
         getSupportFragmentManager()
                 .beginTransaction()
-                .add(R.id.fragment_container, launcherFragment)
+                .add(containerId, new AndroidLauncherFragment(Main::main, AndroidThreadedPlatform::new))
                 .commit();
     }
 
