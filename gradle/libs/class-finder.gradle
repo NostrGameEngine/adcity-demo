@@ -62,7 +62,8 @@ project.ext {
         'org\\.threeten\\..*',
         'org\\.apache\\..*',
         'com\\.simsilica\\.lemur\\.ColorChooser.*',
-        'org\\.slf4j\\..*'
+        'org\\.slf4j\\..*',
+        'com\\.jme3\\.scene\\.plugins\\.ogre\\..*'
 
 
         

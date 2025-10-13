@@ -340,13 +340,6 @@ public class TeaReflectionSupplier implements ReflectionSupplier {
         TeaReflectionSupplier.addReflectionClass("com.jme3.scene.plugins.gltf.GlbLoader");
         TeaReflectionSupplier.addReflectionClass("com.jme3.scene.plugins.gltf.GltfLoader");
         TeaReflectionSupplier.addReflectionClass("com.jme3.scene.plugins.gltf.GltfModelKey");
-        TeaReflectionSupplier.addReflectionClass("com.jme3.scene.plugins.ogre.MaterialLoader");
-        TeaReflectionSupplier.addReflectionClass("com.jme3.scene.plugins.ogre.MeshLoader");
-        TeaReflectionSupplier.addReflectionClass("com.jme3.scene.plugins.ogre.OgreMeshKey");
-        TeaReflectionSupplier.addReflectionClass("com.jme3.scene.plugins.ogre.SceneLoader");
-        TeaReflectionSupplier.addReflectionClass("com.jme3.scene.plugins.ogre.SceneMeshLoader");
-        TeaReflectionSupplier.addReflectionClass("com.jme3.scene.plugins.ogre.SkeletonLoader");
-        TeaReflectionSupplier.addReflectionClass("com.jme3.scene.plugins.ogre.matext.OgreMaterialKey");
         TeaReflectionSupplier.addReflectionClass("com.jme3.scene.shape.AbstractBox");
         TeaReflectionSupplier.addReflectionClass("com.jme3.scene.shape.Box");
         TeaReflectionSupplier.addReflectionClass("com.jme3.scene.shape.CenterQuad");

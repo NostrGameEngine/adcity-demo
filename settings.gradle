@@ -6,6 +6,7 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
         maven { url = uri("https://teavm.org/maven/repository") }
+        maven { url = uri("https://maven.ngengine.org/riccardobl/teavm") }
         mavenLocal()
     }
     plugins {
@@ -41,6 +42,7 @@ dependencyResolutionManagement {
             url = uri("https://central.sonatype.com/repository/maven-snapshots")
         }
         maven { url = uri("https://teavm.org/maven/repository") }
+        maven { url = uri("https://maven.ngengine.org/riccardobl/teavm") }
         ivy {
             name = "Node.js"
             setUrl("https://nodejs.org/dist/")

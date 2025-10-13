@@ -8,9 +8,9 @@
         "**/Thumbs.db": true,
         "**/gradle": true,
         "**/.gradle": true,
-        // "**/build": true,
+        "**/build": true,
         "**/bin": true,
-        // "platform-*": true
+        "platform-*": true
         
     }
 }
