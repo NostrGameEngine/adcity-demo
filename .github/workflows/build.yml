@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         lfs: true
         fetch-depth: 0
@@ -42,7 +42,7 @@ jobs:
       id-token: write
       pages: write
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         lfs: true
         fetch-depth: 0
@@ -83,7 +83,7 @@ jobs:
             platform: macos
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         lfs: true
         fetch-depth: 0
