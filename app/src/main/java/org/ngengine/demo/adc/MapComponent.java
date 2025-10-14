@@ -50,7 +50,7 @@ public class MapComponent implements Component<Object>, AsyncAssetLoadingFragmen
 
             if(map==null){
                 System.out.println("AdCity: Loading map from assets...");
-                map = assetManager.loadModel("adc/city-opt/city.gltf");
+                map = assetManager.loadModel("adc/city-opt/city.glb");
                 // map = new Node();
                 PhysicsComponent physics = mng.getComponent(PhysicsComponent.class);
                 map.depthFirstTraversal(sx->{
