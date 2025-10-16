@@ -58,6 +58,9 @@
       "type": "[Lcom.simsilica.lemur.focus.FocusChangeListener;"
     },
     {
+      "type": "[Lcom.simsilica.lemur.input.StateFunctionListener;"
+    },
+    {
       "type": "[Ljava.awt.event.MouseMotionListener;"
     },
     {
@@ -70,7 +73,106 @@
       ]
     },
     {
+      "type": "com.bulletphysics.collision.dispatch.CompoundCollisionAlgorithm",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.bulletphysics.collision.dispatch.ConvexConvexAlgorithm",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "com.bulletphysics.collision.dispatch.UnionFind$Element",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.bulletphysics.collision.narrowphase.DiscreteCollisionDetectorInterface$ClosestPointInput",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.bulletphysics.collision.narrowphase.GjkEpaSolver$Face",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.bulletphysics.collision.narrowphase.GjkEpaSolver$He",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.bulletphysics.collision.narrowphase.GjkEpaSolver$Mkv",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.bulletphysics.collision.narrowphase.ManifoldPoint",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.bulletphysics.collision.narrowphase.PersistentManifold",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.bulletphysics.collision.narrowphase.VoronoiSimplexSolver$SubSimplexClosestResult",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.bulletphysics.dynamics.constraintsolver.SolverBody",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.bulletphysics.dynamics.constraintsolver.SolverConstraint",
       "methods": [
         {
           "name": "<init>",
@@ -176,6 +278,24 @@
       "methods": [
         {
           "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.jme3.light.PointLight",
+      "methods": [
+        {
+          "name": "clone",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.jme3.light.SpotLight",
+      "methods": [
+        {
+          "name": "clone",
           "parameterTypes": []
         }
       ]
@@ -339,7 +459,13 @@
       ]
     },
     {
-      "type": "com.jme3.scene.plugins.gltf.GlbLoader"
+      "type": "com.jme3.scene.plugins.gltf.GlbLoader",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "com.jme3.scene.plugins.gltf.GltfLoader",
@@ -436,6 +562,9 @@
     },
     {
       "type": "com.jme3.texture.plugins.AWTLoader"
+    },
+    {
+      "type": "com.jme3.texture.plugins.AWTWebpImageLoader"
     },
     {
       "type": "com.jme3.texture.plugins.DDSLoader"
@@ -605,6 +734,11 @@
     },
     {
       "type": "com.simsilica.lemur.Container",
+      "fields": [
+        {
+          "name": "lemurStyleAttributeMap"
+        }
+      ],
       "methods": [
         {
           "name": "initializeDefaultStyles",
@@ -631,6 +765,11 @@
     },
     {
       "type": "com.simsilica.lemur.Label",
+      "fields": [
+        {
+          "name": "lemurStyleAttributeMap"
+        }
+      ],
       "methods": [
         {
           "name": "initializeDefaultStyles",
@@ -1086,7 +1225,8 @@
     },
     {
       "type": "java.nio.DirectFloatBufferU",
-      "allDeclaredFields": true
+      "allDeclaredFields": true,
+      "unsafeAllocated": true
     },
     {
       "type": "java.nio.DirectIntBufferU",
@@ -2390,7 +2530,21 @@
       ]
     },
     {
+      "type": "org.ngengine.export.NostrPrivateKeySavableWrapper",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.ngengine.gui.components.NIconButton",
+      "fields": [
+        {
+          "name": "lemurStyleAttributeMap"
+        }
+      ],
       "methods": [
         {
           "name": "setColor",
@@ -2409,11 +2563,22 @@
           "parameterTypes": [
             "java.lang.String"
           ]
+        },
+        {
+          "name": "setSVGIconComponent",
+          "parameterTypes": [
+            "org.ngengine.gui.components.NSVGIcon"
+          ]
         }
       ]
     },
     {
-      "type": "org.ngengine.gui.components.NLabel"
+      "type": "org.ngengine.gui.components.NLabel",
+      "fields": [
+        {
+          "name": "lemurStyleAttributeMap"
+        }
+      ]
     },
     {
       "type": "org.ngengine.gui.components.NLoadingSpinner",
@@ -2456,7 +2621,12 @@
       "type": "org.ngengine.gui.components.NVSpacer"
     },
     {
-      "type": "org.ngengine.gui.components.containers.NColumn"
+      "type": "org.ngengine.gui.components.containers.NColumn",
+      "fields": [
+        {
+          "name": "lemurStyleAttributeMap"
+        }
+      ]
     },
     {
       "type": "org.ngengine.gui.components.containers.NContainer"
@@ -2465,10 +2635,20 @@
       "type": "org.ngengine.gui.components.containers.NMultiPageList"
     },
     {
-      "type": "org.ngengine.gui.components.containers.NPanel"
+      "type": "org.ngengine.gui.components.containers.NPanel",
+      "fields": [
+        {
+          "name": "lemurStyleAttributeMap"
+        }
+      ]
     },
     {
-      "type": "org.ngengine.gui.components.containers.NRow"
+      "type": "org.ngengine.gui.components.containers.NRow",
+      "fields": [
+        {
+          "name": "lemurStyleAttributeMap"
+        }
+      ]
     },
     {
       "type": "org.ngengine.gui.svg.SVGLoader",
@@ -2480,13 +2660,23 @@
       ]
     },
     {
-      "type": "org.ngengine.gui.win.NToast"
+      "type": "org.ngengine.gui.win.NToast",
+      "fields": [
+        {
+          "name": "lemurStyleAttributeMap"
+        }
+      ]
     },
     {
       "type": "org.ngengine.gui.win.NWindow"
     },
     {
       "type": "org.ngengine.gui.win.std.NHud",
+      "fields": [
+        {
+          "name": "lemurStyleAttributeMap"
+        }
+      ],
       "methods": [
         {
           "name": "<init>",
