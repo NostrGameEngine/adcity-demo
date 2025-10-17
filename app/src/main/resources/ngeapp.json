@@ -7,15 +7,14 @@
     "Fullscreen": false,
     "Resizable": true,
     "Title": "AdCity",
-    "Version": "2.0.0",
-    "VersionCode": 2,
+    "Version": "1.0.0",
+    "VersionCode": 1,
     "ShortName": "adc",
     "Namespace":"org.ngengine.adc",
     "Copyright": "",
     "VSync": true,
     "GammaCorrection": true,
     "ScreenOrientation": "landscape",
-    "run_in_worker": false,
     "relays": {
         "blossom": {
             "default": [
