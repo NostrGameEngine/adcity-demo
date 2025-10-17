@@ -15,6 +15,7 @@
     "VSync": true,
     "GammaCorrection": true,
     "ScreenOrientation": "landscape",
+    "run_in_worker": false,
     "relays": {
         "blossom": {
             "default": [
