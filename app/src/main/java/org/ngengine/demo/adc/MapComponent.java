@@ -1,6 +1,5 @@
 package org.ngengine.demo.adc;
 
-import java.io.IOException;
 import java.util.function.Consumer;
 
 import org.ngengine.AsyncAssetManager;
@@ -10,15 +9,11 @@ import org.ngengine.ads.ImmersiveAdControl;
 import org.ngengine.components.Component;
 import org.ngengine.components.ComponentManager;
 import org.ngengine.components.fragments.AsyncAssetLoadingFragment;
-import org.ngengine.components.fragments.MainViewPortFragment;
 import org.ngengine.runner.Runner;
 import org.ngengine.store.DataStore;
 import org.ngengine.store.DataStoreProvider;
 
 import com.jme3.asset.TextureKey;
-import com.jme3.bullet.collision.shapes.CollisionShape;
-import com.jme3.bullet.control.RigidBodyControl;
-import com.jme3.bullet.util.CollisionShapeFactory;
 import com.jme3.environment.EnvironmentProbeControl;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
@@ -40,36 +35,24 @@ public class MapComponent implements Component<Object>, AsyncAssetLoadingFragmen
     @Override
     public void loadAssetsAsync(ComponentManager mng, AsyncAssetManager assetManager, DataStore cache, Consumer<Object> preload) {
         try{
-            // String cacheEntry = "adc/city000";
-            // try{
-            //     if(cache.exists(cacheEntry)){
-            //         map = (Spatial)cache.read(cacheEntry);
-            //     }
-            // } catch(Exception e){
-            // }
 
-            if(map==null){
-                System.out.println("AdCity: Loading map from assets...");
-                map = assetManager.loadModel("adc/city-opt/city.gltf");
-                // map = new Node();
-                PhysicsComponent physics = mng.getComponent(PhysicsComponent.class);
-                map.depthFirstTraversal(sx->{
-                    Object worldGuard = sx.getUserData("nge.worldguard");
-                    if(worldGuard!=null){
-                        sx.setCullHint(CullHint.Always);
-                        physics.createStaticRigidBody(sx);
-                        System.out.println("AdCity: Added worldguard collision to "+sx.getName());
-                    }
-                });
+            System.out.println("AdCity: Loading map from assets...");
+            
+            map = assetManager.loadModel("adc/city-opt/city.glb");
+            
+        
+            PhysicsComponent physics = mng.getComponent(PhysicsComponent.class);
+            map.depthFirstTraversal(sx->{
+                Object worldGuard = sx.getUserData("nge.worldguard");
+                if(worldGuard!=null){
+                    sx.setCullHint(CullHint.Always);
+                    physics.createStaticRigidBody(sx);
+                    System.out.println("AdCity: Added worldguard collision to "+sx.getName());
+                }
+            });
 
-                // try {
-                //     cache.write(cacheEntry, map);
-                // } catch (IOException e) {
-                //     e.printStackTrace();
-                // }
-            } else {
-                System.out.println("AdCity: Map loaded from cache.");
-            }
+               
+            
 
             TextureKey key = new TextureKey("adc/night-sky.png", true);
             key.setGenerateMips(false);
